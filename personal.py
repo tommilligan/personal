@@ -7,13 +7,14 @@ import logging
 import hashlib
 import json
 import getpass
+import base64
 
 from Crypto.Cipher import AES
 from twilio.rest import TwilioRestClient
 
 CREDENTIALS_PATH = 'credentials.json'
 
-def confirm_input(prompt, method=input):
+def confirm_input(prompt, method=input): # Takes string to use as prompt, and method used to get inpuy (default is stdlib input)
     value_initial = value_check = None
     while (value_initial != value_check) or (value_initial == None):
             value_initial = method(prompt)
@@ -23,24 +24,32 @@ def confirm_input(prompt, method=input):
     return value_initial
     
 
-class AESCipher(object): # http://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256
+class AESCipher(object): # Modified from http://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256
     def __init__(self, key): 
-        self.bs = 16
+        self.bs = 32
         self.key = hashlib.sha256(key.encode()).digest()
 
+    # Takes string, returns ascii-string
     def encrypt(self, raw):
-        logging.debug('Raw length {0}'.format(len(raw)))
+        logging.debug('Encrypting')
+        logging.debug('DECRYP Type: {0}'.format(type(raw)))
         raw = self._pad(raw)
-        logging.debug('Padded length {0}'.format(len(raw)))
         iv = os.urandom(AES.block_size)
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
-        return (iv + cipher.encrypt(raw)).hex()
-
+        enc = base64.b64encode(iv + cipher.encrypt(raw)).decode('ascii')
+        logging.debug('ENCRYP Type: {0}, Value: {1}'.format(type(enc), enc))
+        return enc
+    
+    # Takes string (decodes as ascii), returns string
     def decrypt(self, enc):
-        enc = enc.encode('utf8')
+        logging.debug('Decrypting')
+        logging.debug('ENCRYP Type: {0}, Value: {1}'.format(type(enc), enc))
+        enc = base64.b64decode(enc.encode('ascii'))
         iv = enc[:AES.block_size]
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
-        return self._unpad(cipher.decrypt(enc[AES.block_size:])).fromhex()
+        dec = self._unpad(cipher.decrypt(enc[AES.block_size:])).decode('utf-8')
+        logging.debug('DECRYP Type: {0}'.format(type(dec)))
+        return dec
 
     def _pad(self, s):
         return s + (self.bs - len(s) % self.bs) * chr(self.bs - len(s) % self.bs)
@@ -80,11 +89,95 @@ class log(object):
 #master_pass = AESCipher(getpass.getpass())
 
 class personal(object):
-    def __init__(self): 
-        master_pass = confirm_input('Password for personal module: ', method=getpass.getpass)
-        master_pass
-        
+    _CREDENTIALS_PATH = "credentials.json"
+    _CREDENTIALS_REQUIRED = {
+        'TWILIO_ACCOUNT_SID',
+        'TWILIO_AUTH_TOKEN',
+        'PERSONAL_PHONE_NUMBER',
+        'TWILIO_PHONE_NUMBER',
+        'PERSONAL_EMAIL',
+        'PERSONAL_EMAIL_PASSWORD'
+    }
+    _MASTER_KEY_HASH_NAME = 'MASTER_KEY_HASH'
     
+    def __init__(self): 
+        master_key = confirm_input('Password for personal module (hidden): ', method=getpass.getpass)
+        # sha512 for password checking
+        self._master_key_hash = hashlib.sha512(master_key.encode()).digest().hex()
+        # sha256 used for ciphering
+        self._cipher = AESCipher(master_key)
+        self._credentials = {}
+        logging.debug('Password saved, cipher generated')
+        logging.debug('Looking for personal credentials at {0}'.format(self._CREDENTIALS_PATH))
+        
+        # try to _load_credential
+        # if FileNotFoundError error, make new cred with edit_credentials
+        try:
+            self._load_credentials()
+        except FileNotFoundError:
+            print('Starting new credentials file: {0}'.format(self._CREDENTIALS_PATH))
+            self.edit_credentials()
+    
+    def _save_credentials(self):
+        logging.debug('Saving credentials.json')
+        # Encrypt credentials for saving
+        dict_out = {k: self._cipher.encrypt(v) for k, v in self._credentials.items()}
+        # Add password hash
+        dict_out.update({self._MASTER_KEY_HASH_NAME: self._master_key_hash})
+        with open(self._CREDENTIALS_PATH, 'w') as outfile:
+            json.dump(dict_out, outfile)    
+    
+    def _load_credentials(self):
+        # check if file exist, else pass error up for handling
+        # verify with password hash
+        logging.debug('Loading credentials.json')
+        credentials = {}
+        with open(self._CREDENTIALS_PATH) as data_file:
+            credentials = json.load(data_file)
+        if credentials[self._MASTER_KEY_HASH_NAME] != self._master_key_hash:
+            logging.debug('Password incorrect')
+            print('Password for personal module incorrect. Please try again or delete the current credentials.json file')
+            return False
+        else:
+            logging.debug('Password correct')
+            # Remove password hash, decrypt and store other credentials
+            credentials.pop(self._MASTER_KEY_HASH_NAME)
+            self._credentials = {k: self._cipher.decrypt(v) for k, v in credentials.items()}
+            logging.debug('Personal credentials loaded')
+    
+    def edit_credentials(self, credential=False, already_set=False):
+        # get user input of credentials
+        # save and reload credentials.json
+        credentials_required = self._CREDENTIALS_REQUIRED
+        if credential:
+            credentials_required = [credential]
+        
+        for cred in credentials_required:
+            # If credential is already set, decide whether to continue
+            if (cred in self._credentials.keys()) and (already_set is not True):
+                continue
+            else:
+                current_encrypted_value = ''
+                try:
+                    current_encrypted_value = self._credentials[cred]
+                except KeyError:
+                    None
+                
+                prompt = '\nCredential: {0}\nCurrent (encrypted) value: {1}\nEnter new value, or press enter to skip: '.format(cred, current_encrypted_value)
+                input_value = confirm_input(prompt)      
+                if input_value == '':
+                    logging.info('{0} skipped'.format(cred))
+                else:
+                    self._credentials.update({cred: input_value})
+                    logging.info('{0} updated: {1}'.format(cred, input_value))
+        
+        self._save_credentials()
+        self._load_credentials()
+        
+    def credential(self, key):
+        return self._credentials[key]
+        
+
 def twilio_sms(from_, to, body):
     logging.debug('Texting from Twilio')
     logging.debug('Twilio credentials: {{Account SID: {0}, Auth Token: {1}}}'.format(CREDENTIALS['TWILIO_ACCOUNT_SID'], '*'*32))
@@ -106,92 +199,15 @@ def text_me(body):
     logging.debug('Texting myself')
     return text(CREDENTIALS['PERSONAL_PHONE_NUMBER'], body)
 
-    
-    
-### YOUR CREDENTIALS - ENVIRONMENT VARIABLES HERE ###
-# python variable name: environment variable name
-
-CREDENTIALS = {
-    'TWILIO_ACCOUNT_SID': 'TWILIO_ACCOUNT_SID',
-    'TWILIO_AUTH_TOKEN': 'TWILIO_AUTH_TOKEN',
-    'PERSONAL_PHONE_NUMBER': 'PERSONAL_PHONE_NUMBER',
-    'TWILIO_PHONE_NUMBER': 'TWILIO_PHONE_NUMBER',
-    'PERSONAL_EMAIL': 'PERSONAL_EMAIL'
-    }
-for k, v in CREDENTIALS.items():
-    try: 
-        CREDENTIALS[k] = os.environ[v]
-    except KeyError as e:
-        CREDENTIALS[k] = None
-        #logging.warning('Environment variable lookup error with key: {0}'.format(e.args[0]))
-#############################
-
-# Take user input of credentials, store in credentials.json with AES encryption
 def main(args):
-    
-    master_key = confirm_input('Password (hidden): ', method=getpass.getpass)
-    master_key_hash = hashlib.sha512(master_key.encode()).digest().hex()
-    credentials = {}
-    
-    # If credentials.json exists, load credentials, check password and exit if not correct
-    if os.path.isfile(CREDENTIALS_PATH):
-        with open(CREDENTIALS_PATH) as data_file:
-            credentials = json.load(data_file)
-        if credentials['MASTER_HASH_KEY'] != master_key_hash:
-            logging.debug('Password incorrect')
-            sys.exit('Password incorrect. Please try again or delete the current credentials.json file')
-        logging.debug('Password correct, loading credentials.json')
-    # Otherwise, start new credentials file
-    else:
-        credentials['MASTER_HASH_KEY'] = master_key_hash
-        logging.info('Password saved as {0}'.format(master_key_hash))
-        print('Password set')
-        
-    cipher = AESCipher(master_key)
-    credentials_required = {
-        'TWILIO_ACCOUNT_SID',
-        'TWILIO_AUTH_TOKEN',
-        'PERSONAL_PHONE_NUMBER',
-        'TWILIO_PHONE_NUMBER',
-        'PERSONAL_EMAIL',
-        'PERSONAL_EMAIL_PASSWORD'
-    }
-    
-    # If --credential is specified, only set that credential
-    if args.credential:
-        credentials_required = [args.credential]
-    
-    for cred in credentials_required:
-        # If credential is already set, get value. If not (KeyError), carry on execution
-        current_encrypted_value = ''
-        try:
-            current_encrypted_value = credentials[cred]
-            # Unless --all flag is raised, only ask for unset credentials
-            if (args.all is not True) and (args.credential is False):
-                continue
-        except KeyError:
-            None
-        
-        prompt = '\nCredential: {0}\nCurrent (encrypted) value: {1}\nEnter new value, or press enter to skip: '.format(cred, current_encrypted_value)
-        input_value = confirm_input(prompt)
-                
-        if input_value == '':
-            logging.info('{0} skipped'.format(cred))
-            continue
-        else:
-            encrypted_value = cipher.encrypt(input_value)
-            credentials.update({cred: encrypted_value})
-            logging.info('{0} updated: {1}'.format(cred, encrypted_value))
-    
-    with open(CREDENTIALS_PATH, 'w') as outfile:
-        json.dump(credentials, outfile)
-            
+    ppa = personal()
+    ppa.edit_credentials(credential=args.credential, already_set=args.already_set)
 
 if __name__ == '__main__':
     logger = log()
-    parser = argparse.ArgumentParser(description='Editing of credentials.json for personal.py')
+    parser = argparse.ArgumentParser(description='Editing of credentials.json for personal.py. By default shows all unset credentials')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-c', '--credential', help='update a specific credential')
-    group.add_argument('-a', '--all', action='store_true', help='cycle through all credentials')
+    group.add_argument('-a', '--already_set', action='store_true', help='cycle through all credentials, even if already set')
     args = parser.parse_args()
     main(args)
