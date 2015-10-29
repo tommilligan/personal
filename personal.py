@@ -8,12 +8,13 @@ import hashlib
 import json
 import getpass
 import base64
+import smtplib
+import email
 
 from Crypto.Cipher import AES
 from twilio.rest import TwilioRestClient
 
-CREDENTIALS_PATH = 'credentials.json'
-
+# Helper functions
 def confirm_input(prompt, method=input): # Takes string to use as prompt, and method used to get inpuy (default is stdlib input)
     value_initial = value_check = None
     while (value_initial != value_check) or (value_initial == None):
@@ -22,9 +23,9 @@ def confirm_input(prompt, method=input): # Takes string to use as prompt, and me
             if value_initial != value_check:
                 print('\nPlease try again:')
     return value_initial
-    
 
-class AESCipher(object): # Modified from http://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256
+# AES Encryption Implementation based on PyCrypto, modified from http://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256
+class AESCipher(object):
     def __init__(self, key): 
         self.bs = 32
         self.key = hashlib.sha256(key.encode()).digest()
@@ -58,7 +59,7 @@ class AESCipher(object): # Modified from http://stackoverflow.com/questions/1252
     def _unpad(s):
         return s[:-ord(s[len(s)-1:])]
         
-    
+# Log quickstart, using logging stlib
 class log(object):        
     def __init__(self, logfile='{0}.log'.format('_'.join(sys.argv[0].split('.'))), file_level=logging.DEBUG, stream_level=logging.WARNING):
         self.logger = logging.getLogger()
@@ -83,11 +84,7 @@ class log(object):
     def disable(self):
         logging.disable(logging.CRITICAL)
 
-#define "personal" calss here, which calls for aes as subobject on init (getpass for UInput)
-        
-#import getpass
-#master_pass = AESCipher(getpass.getpass())
-
+# Class holding useful functions, that all use personal encrypted data
 class personal(object):
     _CREDENTIALS_PATH = "credentials.json"
     _CREDENTIALS_REQUIRED = {
@@ -96,7 +93,9 @@ class personal(object):
         'PERSONAL_PHONE_NUMBER',
         'TWILIO_PHONE_NUMBER',
         'PERSONAL_EMAIL',
-        'PERSONAL_EMAIL_PASSWORD'
+        'PERSONAL_EMAIL_PASSWORD',
+        'GMAIL_EMAIL',
+        'GMAIL_EMAIL_PASSWORD'
     }
     _MASTER_KEY_HASH_NAME = 'MASTER_KEY_HASH'
     
@@ -115,7 +114,9 @@ class personal(object):
         try:
             self._load_credentials()
         except FileNotFoundError:
-            print('Starting new credentials file: {0}'.format(self._CREDENTIALS_PATH))
+            print('\n\nStarting new credentials file: {0}'.format(self._CREDENTIALS_PATH))
+            print('\n\nPlease enter your credentials for future use. Data is stored cryptographically using AES')            
+            print('\n\nCredentials can be edited in future by calling personal.personal.edit_credentials() or running personal.py directly')            
             self.edit_credentials()
     
     def _save_credentials(self):
@@ -136,8 +137,7 @@ class personal(object):
             credentials = json.load(data_file)
         if credentials[self._MASTER_KEY_HASH_NAME] != self._master_key_hash:
             logging.debug('Password incorrect')
-            print('Password for personal module incorrect. Please try again or delete the current credentials.json file')
-            return False
+            sys.exit('Password for personal module incorrect. Please try again or delete the current credentials.json file')
         else:
             logging.debug('Password correct')
             # Remove password hash, decrypt and store other credentials
@@ -145,7 +145,7 @@ class personal(object):
             self._credentials = {k: self._cipher.decrypt(v) for k, v in credentials.items()}
             logging.debug('Personal credentials loaded')
     
-    def edit_credentials(self, credential=False, already_set=False):
+    def edit_credentials(self, credential=False, already_set=True):
         # get user input of credentials
         # save and reload credentials.json
         credentials_required = self._CREDENTIALS_REQUIRED
@@ -177,28 +177,30 @@ class personal(object):
     def credential(self, key):
         return self._credentials[key]
         
+    ### SMS TEXTING
+    def twilio_sms(self, from_, to, body):
+        logging.debug('Texting from Twilio')
+        logging.info('Twilio SMS: {{To: {0}, From: {1}, Body: {2}}}'.format(to, from_, body.replace('\n', ' ')))
+        client = TwilioRestClient(self._credentials['TWILIO_ACCOUNT_SID'], self._credentials['TWILIO_AUTH_TOKEN']) 
+        response = client.messages.create(
+            to=to, 
+            from_=from_, 
+            body=body,  
+        )
+        logging.debug('Response from Twilio: {0}'.format(response))
+        return response
 
-def twilio_sms(from_, to, body):
-    logging.debug('Texting from Twilio')
-    logging.debug('Twilio credentials: {{Account SID: {0}, Auth Token: {1}}}'.format(CREDENTIALS['TWILIO_ACCOUNT_SID'], '*'*32))
-    logging.info('Twilio SMS: {{To: {0}, From: {1}, Body: {2}}}'.format(to, from_, body.replace('\n', ' ')))
-    client = TwilioRestClient(CREDENTIALS['TWILIO_ACCOUNT_SID'], CREDENTIALS['TWILIO_AUTH_TOKEN']) 
-    response = client.messages.create(
-        to=to, 
-        from_=from_, 
-        body=body,  
-    )
-    logging.debug('Response from Twilio: {0}'.format(response))
-    return response
+    def text(self, to, body):
+        logging.debug('Texting someone')
+        return self.twilio_sms(self._credentials['TWILIO_PHONE_NUMBER'], to, body)
 
-def text(to, body):
-    logging.debug('Texting someone')
-    return twilio_sms(CREDENTIALS['TWILIO_PHONE_NUMBER'], to, body)
+    def text_me(self, body):
+        logging.debug('Texting myself')
+        return self.text(self._credentials['PERSONAL_PHONE_NUMBER'], body)
+    
 
-def text_me(body):
-    logging.debug('Texting myself')
-    return text(CREDENTIALS['PERSONAL_PHONE_NUMBER'], body)
-
+# If called directly, script allows editing of the credentials file
+# Setup will be performed automatically on first use of the personal module if not already done
 def main(args):
     ppa = personal()
     ppa.edit_credentials(credential=args.credential, already_set=args.already_set)
