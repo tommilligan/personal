@@ -100,7 +100,7 @@ class personal(object):
     _MASTER_KEY_HASH_NAME = 'MASTER_KEY_HASH'
     
     def __init__(self): 
-        master_key = confirm_input('Password for personal module (hidden): ', method=getpass.getpass)
+        master_key = getpass.getpass('Password for personal module (hidden): ')
         # sha512 for password checking
         self._master_key_hash = hashlib.sha512(master_key.encode()).digest().hex()
         # sha256 used for ciphering
