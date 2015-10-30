@@ -140,6 +140,7 @@ class personal(object):
             sys.exit('Password for personal module incorrect. Please try again or delete the current credentials.json file')
         else:
             logging.debug('Password correct')
+            print('Personal credentials loaded')
             # Remove password hash, decrypt and store other credentials
             credentials.pop(self._MASTER_KEY_HASH_NAME)
             self._credentials = {k: self._cipher.decrypt(v) for k, v in credentials.items()}
@@ -180,7 +181,6 @@ class personal(object):
     ### SMS TEXTING
     def twilio_sms(self, from_, to, body):
         logging.debug('Texting from Twilio')
-        logging.info('Twilio SMS: {{To: {0}, From: {1}, Body: {2}}}'.format(to, from_, body.replace('\n', ' ')))
         client = TwilioRestClient(self._credentials['TWILIO_ACCOUNT_SID'], self._credentials['TWILIO_AUTH_TOKEN']) 
         response = client.messages.create(
             to=to, 
@@ -198,6 +198,44 @@ class personal(object):
         logging.debug('Texting myself')
         return self.text(self._credentials['PERSONAL_PHONE_NUMBER'], body)
     
+    ### EMAILING
+    # All email functions expect email.message.message; msg['From'] and msg['To'] are ignored
+    def gmail_email(self, from_, to, msg):
+        logging.debug('Emailing from Gmail')
+        smtpConn = smtplib.SMTP('smtp.gmail.com', 587)
+        smtpConn.ehlo()
+        smtpConn.starttls()
+        login_response = smtpConn.login(self._credentials['GMAIL_EMAIL'], self._credentials['GMAIL_EMAIL_PASSWORD'])
+        
+        # if email is of type email.message.Message, flatten and send
+        # if anything else, convert to string and try and send
+        if isinstance(msg, email.message.Message):
+            logging.debug('Flattening MIME to string')
+            # If From is already set, overwrite
+            msg['From'] = from_
+            # If To is string, convert to list and add each to header
+            if isinstance(to, str):
+                to = [to]
+            for x in to:
+                msg['To'] = x
+            msg = msg.as_string()
+        else:
+            email = str(email)
+        
+        logging.debug(msg.replace('\n', ' '))
+        response = smtpConn.sendmail(from_, to, msg)
+        logging.info('Response from Gmail: {0}'.format(response))
+        smtpConn.quit()
+        return response
+
+    def email(self, to, msg):
+        logging.debug('Emailing someone')
+        return self.gmail_email(self._credentials['GMAIL_EMAIL'], to, msg)
+
+    def email_me(self, msg):
+        logging.debug('Emailing myself')
+        return self.email(self._credentials['PERSONAL_EMAIL'], msg)
+
 
 # If called directly, script allows editing of the credentials file
 # Setup will be performed automatically on first use of the personal module if not already done
