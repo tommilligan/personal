@@ -15,7 +15,7 @@ from Crypto.Cipher import AES
 from twilio.rest import TwilioRestClient
 
 # Helper functions
-def confirm_input(prompt, method=input): # Takes string to use as prompt, and method used to get inpuy (default is stdlib input)
+def confirm_input(prompt, method=input): # Takes string to use as prompt, and method used to get input (default is stdlib input, options include getpass.getpass)
     value_initial = value_check = None
     while (value_initial != value_check) or (value_initial == None):
             value_initial = method(prompt)
@@ -58,33 +58,8 @@ class AESCipher(object):
     @staticmethod
     def _unpad(s):
         return s[:-ord(s[len(s)-1:])]
-        
-# Log quickstart, using logging stlib
-class log(object):        
-    def __init__(self, logfile='{0}.log'.format('_'.join(sys.argv[0].split('.'))), file_level=logging.DEBUG, stream_level=logging.WARNING):
-        self.logger = logging.getLogger()
-        self.logger.setLevel(logging.DEBUG)
-        # File log
-        fh = logging.FileHandler(logfile)
-        fh.setLevel(file_level)
-        # Console log
-        ch = logging.StreamHandler()
-        ch.setLevel(stream_level)
-        # Add format to handlers, add handlers to logger
-        handlers = [fh, ch]
-        formatter = logging.Formatter('%(asctime)s-%(name)s-%(pathname)s-%(levelname)s-%(message)s')
-        for h in handlers:
-            h.setFormatter(formatter)
-            self.logger.addHandler(h)
-        logging.info('~~~ START LOG ~~~')
-        
-    def enable(self):
-        logging.disable(logging.NOTSET)
-        
-    def disable(self):
-        logging.disable(logging.CRITICAL)
 
-# Class holding useful functions, that all use personal encrypted data
+# Class holding useful functions, that all use personal secure encrypted data
 class personal(object):
     _CREDENTIALS_PATH = "credentials.json"
     _CREDENTIALS_REQUIRED = {
@@ -240,7 +215,6 @@ class personal(object):
 # Setup will be performed automatically on first use of the personal module if not already done
 #? this currently results in setupx2 on first run, todo fix
 def main():
-    logger = log()
     # Command line argument parsing
     parser = argparse.ArgumentParser(description='Editing of credentials.json for personal.py. By default shows all unset credentials')
     group = parser.add_mutually_exclusive_group()
