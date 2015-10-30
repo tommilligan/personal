@@ -93,7 +93,6 @@ class personal(object):
         'PERSONAL_PHONE_NUMBER',
         'TWILIO_PHONE_NUMBER',
         'PERSONAL_EMAIL',
-        'PERSONAL_EMAIL_PASSWORD',
         'GMAIL_EMAIL',
         'GMAIL_EMAIL_PASSWORD'
     }
@@ -120,18 +119,19 @@ class personal(object):
             self.edit_credentials()
     
     def _save_credentials(self):
-        logging.debug('Saving credentials.json')
+        logging.debug('Saving {0}'.format(self._CREDENTIALS_PATH))
         # Encrypt credentials for saving
         dict_out = {k: self._cipher.encrypt(v) for k, v in self._credentials.items()}
         # Add password hash
         dict_out.update({self._MASTER_KEY_HASH_NAME: self._master_key_hash})
         with open(self._CREDENTIALS_PATH, 'w') as outfile:
             json.dump(dict_out, outfile)    
+        print('Personal credentials saved')
     
     def _load_credentials(self):
         # check if file exist, else pass error up for handling
         # verify with password hash
-        logging.debug('Loading credentials.json')
+        logging.debug('Loading {0}'.format(self._CREDENTIALS_PATH))
         credentials = {}
         with open(self._CREDENTIALS_PATH) as data_file:
             credentials = json.load(data_file)
@@ -140,11 +140,12 @@ class personal(object):
             sys.exit('Password for personal module incorrect. Please try again or delete the current credentials.json file')
         else:
             logging.debug('Password correct')
-            print('Personal credentials loaded')
-            # Remove password hash, decrypt and store other credentials
+            logging.debug('Loading credentials.json')
+            # Remove password hash, store & decrypt and store other credentials
             credentials.pop(self._MASTER_KEY_HASH_NAME)
+            self._credentials_encrypted = {k: v for k, v in credentials.items()}
             self._credentials = {k: self._cipher.decrypt(v) for k, v in credentials.items()}
-            logging.debug('Personal credentials loaded')
+            print('Personal credentials loaded')
     
     def edit_credentials(self, credential=False, already_set=True):
         # get user input of credentials
@@ -155,12 +156,12 @@ class personal(object):
         
         for cred in credentials_required:
             # If credential is already set, decide whether to continue
-            if (cred in self._credentials.keys()) and (already_set is not True):
+            if (cred in self._credentials.keys()) and ((already_set is False) and (credential is False)):
                 continue
             else:
                 current_encrypted_value = ''
                 try:
-                    current_encrypted_value = self._credentials[cred]
+                    current_encrypted_value = self._credentials_encrypted[cred]
                 except KeyError:
                     None
                 
@@ -171,13 +172,12 @@ class personal(object):
                 else:
                     self._credentials.update({cred: input_value})
                     logging.info('{0} updated: {1}'.format(cred, input_value))
-        
         self._save_credentials()
         self._load_credentials()
         
     def credential(self, key):
         return self._credentials[key]
-        
+    
     ### SMS TEXTING
     def twilio_sms(self, from_, to, body):
         logging.debug('Texting from Twilio')
@@ -189,11 +189,11 @@ class personal(object):
         )
         logging.debug('Response from Twilio: {0}'.format(response))
         return response
-
+    
     def text(self, to, body):
         logging.debug('Texting someone')
         return self.twilio_sms(self._credentials['TWILIO_PHONE_NUMBER'], to, body)
-
+    
     def text_me(self, body):
         logging.debug('Texting myself')
         return self.text(self._credentials['PERSONAL_PHONE_NUMBER'], body)
@@ -220,34 +220,37 @@ class personal(object):
                 msg['To'] = x
             msg = msg.as_string()
         else:
-            email = str(email)
+            msg = str(msg)
         
         logging.debug(msg.replace('\n', ' '))
         response = smtpConn.sendmail(from_, to, msg)
         logging.info('Response from Gmail: {0}'.format(response))
         smtpConn.quit()
         return response
-
+    
     def email(self, to, msg):
         logging.debug('Emailing someone')
         return self.gmail_email(self._credentials['GMAIL_EMAIL'], to, msg)
-
+    
     def email_me(self, msg):
         logging.debug('Emailing myself')
         return self.email(self._credentials['PERSONAL_EMAIL'], msg)
 
-
 # If called directly, script allows editing of the credentials file
 # Setup will be performed automatically on first use of the personal module if not already done
-def main(args):
-    ppa = personal()
-    ppa.edit_credentials(credential=args.credential, already_set=args.already_set)
-
-if __name__ == '__main__':
+#? this currently results in setupx2 on first run, todo fix
+def main():
     logger = log()
+    # Command line argument parsing
     parser = argparse.ArgumentParser(description='Editing of credentials.json for personal.py. By default shows all unset credentials')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-c', '--credential', help='update a specific credential')
     group.add_argument('-a', '--already_set', action='store_true', help='cycle through all credentials, even if already set')
     args = parser.parse_args()
-    main(args)
+    print(args)
+    # Initialise a personal instance and edit credentials
+    ppa = personal()
+    ppa.edit_credentials(credential=args.credential, already_set=args.already_set)
+
+if __name__ == '__main__':
+    sys.exit(main())
