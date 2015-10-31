@@ -1,15 +1,22 @@
-.. personal documentation master file, created by
-   sphinx-quickstart on Sat Oct 31 00:22:46 2015.
+.. pypersonalassistant documentation master file, created by
+   sphinx-quickstart on Sat Oct 31 15:06:28 2015.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to personal's documentation!
-====================================
+Welcome to pypersonalassistant's documentation!
+===============================================
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
+   
+   intro
+   installation
+   examples
+
+.. automodule:: pypersonalassistant
+    :members:
 
 
 

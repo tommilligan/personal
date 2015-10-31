@@ -26,6 +26,9 @@ def confirm_input(prompt, method=input): # Takes string to use as prompt, and me
 
 # AES Encryption Implementation based on PyCrypto, modified from http://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256
 class AESCipher(object):
+    """
+    Create and use a new AESCipher instance based on a secret key
+    """
     def __init__(self, key): 
         self.bs = 32
         self.key = hashlib.sha256(key.encode()).digest()

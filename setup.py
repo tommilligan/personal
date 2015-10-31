@@ -1,7 +1,7 @@
 from setuptools import setup
 
-setup(name='personal',
-      version='0.1.1',
+setup(name='pypersonalassistant',
+      version='0.1.2',
       description='Easy, secure self notification via email and sms, using smtplib and twilio',
       long_description='Using pycrypto AES, personal credentials such as passwords and tokens are encrypted and persistently stored, to allow later automatic notification without a person present. User authentication with a master password is required at object initialisation',
       url='https://github.com/tommilligan/personal',
@@ -18,14 +18,14 @@ setup(name='personal',
         'Programming Language :: Python :: 3'
       ],
       keywords='personal automation automatic notification email sms text secure',
-      py_modules=['personal'],
+      py_modules=['pypersonalassistant'],
       install_requires=[
           'pycrypto',
           'twilio',
       ],
       entry_points={
         'console_scripts': [
-            'personal = personal:main'
+            'pypersonalassistant = pypersonalassistant:main'
         ]
       }
 )

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# personal documentation build configuration file, created by
-# sphinx-quickstart on Sat Oct 31 00:22:46 2015.
+# pypersonalassistant documentation build configuration file, created by
+# sphinx-quickstart on Sat Oct 31 15:06:28 2015.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -32,6 +32,8 @@ import shlex
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
 ]
@@ -51,7 +53,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'personal'
+project = 'pypersonalassistant'
 copyright = '2015, Tom Milligan'
 author = 'Tom Milligan'
 
@@ -106,7 +108,7 @@ pygments_style = 'sphinx'
 #keep_warnings = False
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
+todo_include_todos = True
 
 
 # -- Options for HTML output ----------------------------------------------
@@ -205,7 +207,7 @@ html_static_path = ['_static']
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'personaldoc'
+htmlhelp_basename = 'pypersonalassistantdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -227,7 +229,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'personal.tex', 'personal Documentation',
+  (master_doc, 'pypersonalassistant.tex', 'pypersonalassistant Documentation',
    'Tom Milligan', 'manual'),
 ]
 
@@ -257,7 +259,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'personal', 'personal Documentation',
+    (master_doc, 'pypersonalassistant', 'pypersonalassistant Documentation',
      [author], 1)
 ]
 
@@ -271,8 +273,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'personal', 'personal Documentation',
-   author, 'personal', 'One line description of project.',
+  (master_doc, 'pypersonalassistant', 'pypersonalassistant Documentation',
+   author, 'pypersonalassistant', 'One line description of project.',
    'Miscellaneous'),
 ]
 
