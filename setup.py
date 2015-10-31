@@ -18,14 +18,14 @@ setup(name='pypersonalassistant',
         'Programming Language :: Python :: 3'
       ],
       keywords='personal automation automatic notification email sms text secure',
-      py_modules=['pypersonalassistant'],
+      packages=['pypersonalassistant'],
       install_requires=[
           'pycrypto',
           'twilio',
       ],
       entry_points={
         'console_scripts': [
-            'pypersonalassistant = pypersonalassistant:main'
+            'pypersonalassistant = pypersonalassistant.secure:main'
         ]
       }
 )

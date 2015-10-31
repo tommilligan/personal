@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # pypersonalassistant documentation build configuration file, created by
-# sphinx-quickstart on Sat Oct 31 15:06:28 2015.
+# sphinx-quickstart on Sat Oct 31 16:36:18 2015.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.

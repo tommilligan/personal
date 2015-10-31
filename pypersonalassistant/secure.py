@@ -63,7 +63,7 @@ class AESCipher(object):
         return s[:-ord(s[len(s)-1:])]
 
 # Class holding useful functions, that all use personal secure encrypted data
-class personal(object):
+class secure(object):
     _CREDENTIALS_PATH = "credentials.json"
     _CREDENTIALS_REQUIRED = {
         'TWILIO_ACCOUNT_SID',
@@ -224,8 +224,8 @@ def main():
     group.add_argument('-a', '--already_set', action='store_true', help='cycle through all credentials, even if already set')
     args = parser.parse_args()
     # Initialise a personal instance and edit credentials
-    ppa = personal()
-    ppa.edit_credentials(credential=args.credential, already_set=args.already_set)
+    ppa_sec = secure()
+    ppa_sec.edit_credentials(credential=args.credential, already_set=args.already_set)
 
 if __name__ == '__main__':
     sys.exit(main())
