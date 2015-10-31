@@ -79,6 +79,7 @@ class personal(object):
         self._master_key_hash = hashlib.sha512(master_key.encode()).digest().hex()
         # sha256 used for ciphering
         self._cipher = AESCipher(master_key)
+        self._credentials_encrypted = {}
         self._credentials = {}
         logging.debug('Password saved, cipher generated')
         logging.debug('Looking for personal credentials at {0}'.format(self._CREDENTIALS_PATH))
@@ -88,9 +89,7 @@ class personal(object):
         try:
             self._load_credentials()
         except FileNotFoundError:
-            print('\n\nStarting new credentials file: {0}'.format(self._CREDENTIALS_PATH))
-            print('\n\nPlease enter your credentials for future use. Data is stored cryptographically using AES')            
-            print('\n\nCredentials can be edited in future by calling personal.personal.edit_credentials() or running personal.py directly')            
+            print('\nStarting new credentials file: {0}'.format(self._CREDENTIALS_PATH))
             self.edit_credentials()
     
     def _save_credentials(self):
@@ -122,7 +121,7 @@ class personal(object):
             self._credentials = {k: self._cipher.decrypt(v) for k, v in credentials.items()}
             print('Personal credentials loaded')
     
-    def edit_credentials(self, credential=False, already_set=True):
+    def edit_credentials(self, credential=None, already_set=True):
         # get user input of credentials
         # save and reload credentials.json
         credentials_required = self._CREDENTIALS_REQUIRED
@@ -131,7 +130,7 @@ class personal(object):
         
         for cred in credentials_required:
             # If credential is already set, decide whether to continue
-            if (cred in self._credentials.keys()) and ((already_set is False) and (credential is False)):
+            if (cred in self._credentials) and ((already_set is False) and (credential is None)):
                 continue
             else:
                 current_encrypted_value = ''
@@ -221,7 +220,6 @@ def main():
     group.add_argument('-c', '--credential', help='update a specific credential')
     group.add_argument('-a', '--already_set', action='store_true', help='cycle through all credentials, even if already set')
     args = parser.parse_args()
-    print(args)
     # Initialise a personal instance and edit credentials
     ppa = personal()
     ppa.edit_credentials(credential=args.credential, already_set=args.already_set)
