@@ -4,8 +4,22 @@ import sys
 import logging
 
 # Log quickstart, using logging stlib
-class log(object):        
-    def __init__(self, logfile='{0}.log'.format('_'.join(sys.argv[0].split('.'))), file_level=logging.DEBUG, stream_level=logging.WARNING):
+class log(object):
+    """
+    Easily start logging any python script using the standard `logging`_ library.
+    
+    .. _logging: https://docs.python.org/3/library/logging.html
+    
+    :param string logfile: Path to the debug log file. Defaults to <your_script>_py.log
+    :param file_level: The `logging level`_ to log to file
+    :param stream_level: The `logging level`_ to log to stdout
+    :returns: A pypersonalassistant.helpers.log object
+    
+    .. _logging level: https://docs.python.org/3.5/library/logging.html#levels
+    """
+    def __init__(self, logfile=None, file_level=logging.DEBUG, stream_level=logging.WARNING):
+        if logfile is None:
+            logfile = '{0}.log'.format('_'.join(sys.argv[0].split('.')))
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
         # File log
@@ -20,10 +34,15 @@ class log(object):
         for h in handlers:
             h.setFormatter(formatter)
             self.logger.addHandler(h)
-        logging.info('~~~ START LOG ~~~')
         
     def enable(self):
+        """
+        (Re)enable logging
+        """
         logging.disable(logging.NOTSET)
         
     def disable(self):
+        """
+        Disable logging
+        """
         logging.disable(logging.CRITICAL)

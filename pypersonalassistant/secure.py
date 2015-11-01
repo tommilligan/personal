@@ -64,7 +64,19 @@ class AESCipher(object):
 
 # Class holding useful functions, that all use personal secure encrypted data
 class secure(object):
-    _CREDENTIALS_PATH = "credentials.json"
+    """
+    .. note :: On creating an instance of this object, user input is required.
+        
+    This class represents a user's consent to pypersonalassistant using their
+    personal credentials in the future.
+    
+    Asks the user for the password used to previously encrypt their private credentials.
+    If it is the first time the module has been used, the password will be
+    used to encrypt credentials entered in future.    
+        
+    :param string credentials_path: The file used to retrieve/store encrypted personal credentials.
+    :returns: A :py:class:`pypersonalassistant.secure.secure` object
+    """
     _CREDENTIALS_REQUIRED = {
         'TWILIO_ACCOUNT_SID',
         'TWILIO_AUTH_TOKEN',
@@ -76,7 +88,8 @@ class secure(object):
     }
     _MASTER_KEY_HASH_NAME = 'MASTER_KEY_HASH'
     
-    def __init__(self): 
+    def __init__(self, credentials_path="credentials.json"):
+        self.credentials_path = credentials_path
         master_key = getpass.getpass('Password for personal module (hidden): ')
         # sha512 for password checking
         self._master_key_hash = hashlib.sha512(master_key.encode()).digest().hex()
@@ -85,32 +98,32 @@ class secure(object):
         self._credentials_encrypted = {}
         self._credentials = {}
         logging.debug('Password saved, cipher generated')
-        logging.debug('Looking for personal credentials at {0}'.format(self._CREDENTIALS_PATH))
+        logging.debug('Looking for personal credentials at {0}'.format(self.credentials_path))
         
         # try to _load_credential
         # if FileNotFoundError error, make new cred with edit_credentials
         try:
             self._load_credentials()
         except FileNotFoundError:
-            print('\nStarting new credentials file: {0}'.format(self._CREDENTIALS_PATH))
+            print('\nStarting new credentials file: {0}'.format(self.credentials_path))
             self.edit_credentials()
     
     def _save_credentials(self):
-        logging.debug('Saving {0}'.format(self._CREDENTIALS_PATH))
+        logging.debug('Saving {0}'.format(self.credentials_path))
         # Encrypt credentials for saving
         dict_out = {k: self._cipher.encrypt(v) for k, v in self._credentials.items()}
         # Add password hash
         dict_out.update({self._MASTER_KEY_HASH_NAME: self._master_key_hash})
-        with open(self._CREDENTIALS_PATH, 'w') as outfile:
+        with open(self.credentials_path, 'w') as outfile:
             json.dump(dict_out, outfile)    
         print('Personal credentials saved')
     
     def _load_credentials(self):
         # check if file exist, else pass error up for handling
         # verify with password hash
-        logging.debug('Loading {0}'.format(self._CREDENTIALS_PATH))
+        logging.debug('Loading {0}'.format(self.credentials_path))
         credentials = {}
-        with open(self._CREDENTIALS_PATH) as data_file:
+        with open(self.credentials_path) as data_file:
             credentials = json.load(data_file)
         if credentials[self._MASTER_KEY_HASH_NAME] != self._master_key_hash:
             logging.debug('Password incorrect')
@@ -125,6 +138,16 @@ class secure(object):
             print('Personal credentials loaded')
     
     def edit_credentials(self, credential=None, already_set=True):
+        """
+        .. note :: User input is required.
+
+        Edit the credentials used by the :py:class:`~pypersonalassistant.secure.secure` class.
+        
+        By default, unset credentials will be displayed.
+        
+        :param string credential: A specific credential to edit.
+        :param bool already_set: If `False` will show all credentials, whether set or unset.
+        """
         # get user input of credentials
         # save and reload credentials.json
         credentials_required = self._CREDENTIALS_REQUIRED
@@ -153,10 +176,30 @@ class secure(object):
         self._load_credentials()
         
     def credential(self, key):
+        """
+        Returns the decrypted (plain-text) value of the credential specified.
+        
+        :param string key: The credential name.
+        :returns: The credential value as a string.
+        """
         return self._credentials[key]
     
     ### SMS TEXTING
-    def twilio_sms(self, from_, to, body):
+    def twilio_SMS(self, from_, to, body):
+        """
+        Send an SMS message from your `twilio`_ account.
+
+        .. _twilio: https://www.twilio.com/
+
+        Login will be performed using stored credentials.
+        
+        * *stored credential name: TWILIO_ACCOUNT_SID*
+        * *stored credential name: TWILIO_AUTH_TOKEN*
+        
+        :param string from_: The phone number in your twilio account to send the SMS message from. Full international format.
+        :param string to: The phone number to send the SMS message to. Full international format.
+        :param string body: The content of the SMS message.
+        """
         logging.debug('Texting from Twilio')
         client = TwilioRestClient(self._credentials['TWILIO_ACCOUNT_SID'], self._credentials['TWILIO_AUTH_TOKEN']) 
         response = client.messages.create(
@@ -167,17 +210,55 @@ class secure(object):
         logging.debug('Response from Twilio: {0}'.format(response))
         return response
     
-    def text(self, to, body):
+    def SMS(self, to, body):
+        """
+        Quickly send an SMS from a default number. Calls :py:meth:`twilio_SMS`.
+        
+        * *stored credential name: TWILIO_PHONE_NUMBER*
+        
+        :param string to: The phone number to send the SMS message to. Full international format.
+        :param string body: The content of the SMS message. 
+        """
         logging.debug('Texting someone')
-        return self.twilio_sms(self._credentials['TWILIO_PHONE_NUMBER'], to, body)
+        return self.twilio_SMS(self._credentials['TWILIO_PHONE_NUMBER'], to, body)
     
-    def text_me(self, body):
+    def SMS_me(self, body):
+        """
+        Quickly send an SMS to yourself. Calls :py:meth:`SMS`.
+        
+        * *stored credential name: PERSONAL_PHONE_NUMBER*
+        
+        :param string body: The content of the SMS message. 
+        """
         logging.debug('Texting myself')
         return self.text(self._credentials['PERSONAL_PHONE_NUMBER'], body)
     
     ### EMAILING
     # All email functions expect email.message.message; msg['From'] and msg['To'] are ignored
     def gmail_email(self, from_, to, msg):
+        """
+        Send an email from your `gmail`_ account.
+        
+        .. _gmail: https://mail.google.com/
+        
+        msg can either be:
+        
+        * A string, in which case:
+            * At the first newline (\\n) the string will be split into subject and body
+            * If no newline is present, the entire string will be body.
+        * An `email.message.Message`_ object
+        
+        .. _email.message.Message: https://docs.python.org/3/library/email.message.html
+        
+        Login will be performed using stored credentials.
+        
+        * *stored credential name: GMAIL_EMAIL*
+        * *stored credential name: GMAIL_EMAIL_PASSWORD*
+        
+        :param string from_: The phone number in your twilio account to send the SMS message from. Full international format.        
+        :param string to: The email address to send the email to.
+        :param body: The content of the email. See above. 
+        """
         logging.debug('Emailing from Gmail')
         smtpConn = smtplib.SMTP('smtp.gmail.com', 587)
         smtpConn.ehlo()
@@ -206,10 +287,25 @@ class secure(object):
         return response
     
     def email(self, to, msg):
+        """
+        Quickly send an email from a default address. Calls :py:meth:`gmail_email`.
+        
+        * *stored credential name: GMAIL_EMAIL*
+        
+        :param string to: The email address to send the email to.
+        :param msg: The content of the email. See :py:meth:`gmail_email`. 
+        """
         logging.debug('Emailing someone')
         return self.gmail_email(self._credentials['GMAIL_EMAIL'], to, msg)
     
     def email_me(self, msg):
+        """
+        Quickly send an email to yourself. Calls :py:meth:`email`.
+        
+        * *stored credential name: PERSONAL_EMAIL*
+        
+        :param msg: The content of the email. See :py:meth:`gmail_email`. 
+        """
         logging.debug('Emailing myself')
         return self.email(self._credentials['PERSONAL_EMAIL'], msg)
 

@@ -3,20 +3,23 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pypersonalassistant's documentation!
-===============================================
+pypersonalassistant
+===================
 
-Contents:
+.. todo:: write an into for the front page
 
 .. toctree::
    :maxdepth: 2
+   
+   installation.rst
+   examples/index.rst
+   reference/index.rst
+   about.rst
 
-.. automodule:: pypersonalassistant
-    :members:
-    :undoc-members:
-    :inherited-members:
-    :imported-members:
-    :show-inheritance:
+todo
+====
+   
+.. todolist::
 
 Indices and tables
 ==================

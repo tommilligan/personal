@@ -25,7 +25,7 @@ setup(name='pypersonalassistant',
       ],
       entry_points={
         'console_scripts': [
-            'pypersonalassistant = pypersonalassistant.secure:main'
+            'pypersonalassistant-credentials = pypersonalassistant.ppa_secure:main'
         ]
       }
 )

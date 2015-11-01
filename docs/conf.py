@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # pypersonalassistant documentation build configuration file, created by
-# sphinx-quickstart on Sat Oct 31 16:36:18 2015.
+# sphinx-quickstart on Sun Nov  1 19:34:25 2015.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -21,6 +21,8 @@ import shlex
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../'))
+
 
 # -- General configuration ------------------------------------------------
 
@@ -32,7 +34,6 @@ import shlex
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
