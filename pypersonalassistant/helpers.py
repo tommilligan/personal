@@ -13,7 +13,7 @@ class log(object):
     :param string logfile: Path to the debug log file. Defaults to <your_script>_py.log
     :param file_level: The `logging level`_ to log to file
     :param stream_level: The `logging level`_ to log to stdout
-    :returns: A pypersonalassistant.helpers.log object
+    :returns: A :py:class:`pypersonalassistant.helpers.log` object
     
     .. _logging level: https://docs.python.org/3.5/library/logging.html#levels
     """
@@ -37,7 +37,7 @@ class log(object):
         
     def enable(self):
         """
-        (Re)enable logging
+        Enable/re-enable logging
         """
         logging.disable(logging.NOTSET)
         

@@ -1,4 +1,4 @@
 About
 =====
 
-.. todo::
+.. todo:: Write the about page

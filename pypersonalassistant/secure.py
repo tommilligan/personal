@@ -65,11 +65,11 @@ class AESCipher(object):
 # Class holding useful functions, that all use personal secure encrypted data
 class secure(object):
     """
-    .. note :: On creating an instance of this object, user input is required.
-        
     This class represents a user's consent to pypersonalassistant using their
     personal credentials in the future.
     
+    .. note :: On creating an instance of this object, user input is required.
+        
     Asks the user for the password used to previously encrypt their private credentials.
     If it is the first time the module has been used, the password will be
     used to encrypt credentials entered in future.    
@@ -139,10 +139,10 @@ class secure(object):
     
     def edit_credentials(self, credential=None, already_set=True):
         """
-        .. note :: User input is required.
-
         Edit the credentials used by the :py:class:`~pypersonalassistant.secure.secure` class.
         
+        .. note :: User input is required.
+
         By default, unset credentials will be displayed.
         
         :param string credential: A specific credential to edit.

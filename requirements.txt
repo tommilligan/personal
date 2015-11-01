@@ -1,2 +1,2 @@
-pycrypto==2.6.1
-twilio==4.6.0
+pycrypto
+twilio
