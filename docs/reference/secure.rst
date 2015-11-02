@@ -7,8 +7,8 @@
 The :py:mod:`~pypersonalassistant.secure` module provides a class with the same name which is
 used to represent a user's consent to pypersonalassistant using their personal credentials.
     
-The secure Class
-----------------
+secure Class
+------------
 
 .. autoclass:: pypersonalassistant.secure.secure
 

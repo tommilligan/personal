@@ -6,11 +6,11 @@ import logging
 # Log quickstart, using logging stlib
 class log(object):
     """
-    Easily start logging any python script using the standard `logging`_ library.
+    Easily setup logs using the standard `logging module`_.
     
-    .. _logging: https://docs.python.org/3/library/logging.html
+    .. _logging module: https://docs.python.org/3/library/logging.html
     
-    :param string logfile: Path to the debug log file. Defaults to <your_script>_py.log
+    :param string logfile: Path to the log file. Defaults to <your_script>_py.log
     :param file_level: The `logging level`_ to log to file
     :param stream_level: The `logging level`_ to log to stdout
     :returns: A :py:class:`pypersonalassistant.helpers.log` object

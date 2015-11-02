@@ -11,11 +11,6 @@ pypersonalassistant
    reference/index.rst
    about.rst
 
-todo
-====
-   
-.. todolist::
-
 Indices and tables
 ==================
 

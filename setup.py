@@ -1,9 +1,16 @@
 from setuptools import setup
 
+# This imports __version__
+execfile('pypersonalassistant/_version.py')
+
+def readme():
+    with open('README.rst') as f:
+        return f.read()
+
 setup(name='pypersonalassistant',
-      version='0.1.2',
+      version=__version__,
       description='Easy, secure self notification via email and sms, using smtplib and twilio',
-      long_description='Using pycrypto AES, personal credentials such as passwords and tokens are encrypted and persistently stored, to allow later automatic notification without a person present. User authentication with a master password is required at object initialisation',
+      long_description=readme()
       url='https://github.com/tommilligan/personal',
       author='Tom Milligan',
       author_email='code@tommilligan.net',
