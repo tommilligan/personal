@@ -1,17 +1,16 @@
 from setuptools import setup
 
-# This imports __version__
-execfile('pypersonalassistant/_version.py')
+version = '0.1.2'
 
 def readme():
     with open('README.rst') as f:
         return f.read()
 
 setup(name='pypersonalassistant',
-      version=__version__,
+      version=version,
       description='Easy, secure self notification via email and sms, using smtplib and twilio',
       long_description=readme()
-      url='https://github.com/tommilligan/personal',
+      url='https://github.com/tommilligan/pypersonalassisstant',
       author='Tom Milligan',
       author_email='code@tommilligan.net',
       license='GPL',

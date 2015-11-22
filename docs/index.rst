@@ -6,10 +6,10 @@ pypersonalassistant
 .. toctree::
    :maxdepth: 2
    
+   about.rst
    installation.rst
    examples/index.rst
    reference/index.rst
-   about.rst
 
 Indices and tables
 ==================
