@@ -244,8 +244,10 @@ class secure(object):
         msg can either be:
         
         * A string, in which case:
+        
             * At the first newline (\\n) the string will be split into subject and body
             * If no newline is present, the entire string will be body.
+        
         * An `email.message.Message`_ object
         
         .. _email.message.Message: https://docs.python.org/3/library/email.message.html
