@@ -9,7 +9,7 @@ def readme():
 setup(name='pypersonalassistant',
       version=version,
       description='Easy, secure self notification via email and sms, using smtplib and twilio',
-      long_description=readme()
+      long_description=readme(),
       url='https://github.com/tommilligan/pypersonalassisstant',
       author='Tom Milligan',
       author_email='code@tommilligan.net',
